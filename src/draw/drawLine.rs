@@ -1,131 +1,56 @@
-use crate::collision::{Line, Vec2d};
-use crate::matrix::Mat;
-use crate::draw::ndcToScreen::ndc_line_to_screen;
+use crate::collision::{ScreenLine};
 
-pub fn draw_line(canvas: &mut Mat, line: &Line) {
-    let (width, height) = canvas.shape();
-    let map_target: (i32, i32) = (width as i32, height as i32);
+// pub fn draw_line(frame: &mut [u8], width: usize, height: usize, line: &ScreenLine) {
+//     // 直接在这里进行Y轴翻转
+//     let (x0, y0) = (line.point1.x as i32, line.point1.y as i32);
+//     let (x1, y1) = (line.point2.x as i32, line.point2.y as i32);
     
-    let screen_line = match ndc_line_to_screen(line, map_target) {
-        Some(line) => line,
-        None => {
-            eprintln!("Warning: Failed to convert NDC line to screen coordinates");
-            return;
-        }
-    };
+//     // Y轴翻转：y = height - 1 - y
+//     let flipped_y0 = (height as i32 - 1) - y0;
+//     let flipped_y1 = (height as i32 - 1) - y1;
     
-    let (x0, y0) = (screen_line.0.0, screen_line.0.1);
-    let (x1, y1) = (screen_line.1.0, screen_line.1.1);
+//     bresenham_line(frame, width, height, x0, flipped_y0, x1, flipped_y1);
+// }
+
+pub fn draw_line(frame: &mut [u8], width: usize, height: usize, line: &ScreenLine) {
+    let (x0, y0) = (line.point1.x, line.point1.y);
+    let (x1, y1) = (line.point2.x, line.point2.y);
     
-    //println!("Drawing line from ({}, {}) to ({}, {})", x0, y0, x1, y1);
-    
-    let (start_x, start_y, end_x, end_y) = if x0 > x1 || (x0 == x1 && y0 > y1) {
-        (x1, y1, x0, y0)
-    } else {
-        (x0, y0, x1, y1)
-    };
-    
-    let dx = end_x - start_x;
-    let dy = end_y - start_y;
-    
-    if !is_valid_coord(start_x, start_y, width, height) || 
-       !is_valid_coord(end_x, end_y, width, height) {
-        eprintln!("Warning: Line coordinates out of canvas bounds");
-        return;
-    }
-    
-    if dx == 0 {
-        draw_vertical_line(canvas, start_x, start_y, end_y);
-        return;
-    }
-    
-    if dy == 0 {
-        draw_horizontal_line(canvas, start_x, end_x, start_y);
-        return;
-    }
-    
-    let abs_dx = dx.abs();
-    let abs_dy = dy.abs();
-    
-    if abs_dx >= abs_dy {
-        draw_line_shallow(canvas, start_x, start_y, end_x, end_y, dx, dy, abs_dx, abs_dy);
-    } else {
-        draw_line_steep(canvas, start_x, start_y, end_x, end_y, dx, dy, abs_dx, abs_dy);
-    }
+    // 使用整数Bresenham算法，避免浮点数精度问题
+    bresenham_line(frame, width, height, x0, y0, x1, y1);
 }
 
-fn is_valid_coord(x: i32, y: i32, width: usize, height: usize) -> bool {
-    x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height
-}
+fn bresenham_line(frame: &mut [u8], width: usize, height: usize, x0: i32, y0: i32, x1: i32, y1: i32) {
+    let dx = (x1 - x0).abs();
+    let sx = if x0 < x1 { 1 } else { -1 };
+    let dy = -(y1 - y0).abs();
+    let sy = if y0 < y1 { 1 } else { -1 };
+    let mut err = dx + dy;
+    let mut x = x0;
+    let mut y = y0;
 
-fn draw_line_shallow(
-    canvas: &mut Mat, 
-    start_x: i32, start_y: i32, 
-    end_x: i32, end_y: i32,
-    dx: i32, dy: i32, 
-    abs_dx: i32, abs_dy: i32
-) {
-    let width = canvas.shape().0;
-    let height = canvas.shape().1;
-    
-    let mut x = start_x;
-    let mut y = start_y as f32;
-    let slope = dy as f32 / dx as f32;
-    
-    while x <= end_x {
-        // 边界检查
-        if is_valid_coord(x, y.round() as i32, width, height) {
-            let y_int = y.round() as i32;
-            canvas.set(x, y_int, '@');
-        }
+    loop {
+        set_pixel(frame, width, height, x, y);
         
-        x += 1;
-        y += slope;
-    }
-}
-
-fn draw_line_steep(
-    canvas: &mut Mat, 
-    start_x: i32, start_y: i32, 
-    end_x: i32, end_y: i32,
-    dx: i32, dy: i32, 
-    abs_dx: i32, abs_dy: i32
-) {
-    let width = canvas.shape().0;
-    let height = canvas.shape().1;
-    
-    let mut y = start_y;
-    let mut x = start_x as f32;
-    let inv_slope = dx as f32 / dy as f32;
-    
-    while y <= end_y {
-        // 边界检查
-        if is_valid_coord(x.round() as i32, y, width, height) {
-            let x_int = x.round() as i32;
-            canvas.set(x_int, y, '@');
-        }
+        if x == x1 && y == y1 { break; }
         
-        y += 1;
-        x += inv_slope;
-    }
-}
-
-fn draw_vertical_line(canvas: &mut Mat, x: i32, y0: i32, y1: i32) {
-    let (start_y, end_y) = if y0 < y1 { (y0, y1) } else { (y1, y0) };
-    
-    for y in start_y..=end_y {
-        if is_valid_coord(x, y, canvas.shape().0, canvas.shape().1) {
-            canvas.set(x, y, '@');
+        let e2 = 2 * err;
+        if e2 >= dy {
+            err += dy;
+            x += sx;
+        }
+        if e2 <= dx {
+            err += dx;
+            y += sy;
         }
     }
 }
 
-fn draw_horizontal_line(canvas: &mut Mat, x0: i32, x1: i32, y: i32) {
-    let (start_x, end_x) = if x0 < x1 { (x0, x1) }  else { (x1, x0) };
-    
-    for x in start_x..=end_x {
-        if is_valid_coord(x, y, canvas.shape().0, canvas.shape().1) {
-            canvas.set(x, y, '@');
+fn set_pixel(frame: &mut [u8], width: usize, height: usize, x: i32, y: i32) {
+    if x >= 0 && y >= 0 && (x as usize) < width && (y as usize) < height {
+        let idx = (y as usize * width + x as usize) * 4;
+        if idx + 3 < frame.len() {
+            frame[idx..idx+4].copy_from_slice(&[255, 255, 255, 255]);
         }
     }
 }
