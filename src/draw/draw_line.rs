@@ -1,22 +1,9 @@
 use crate::collision::{ScreenLine};
 
-// pub fn draw_line(frame: &mut [u8], width: usize, height: usize, line: &ScreenLine) {
-//     // 直接在这里进行Y轴翻转
-//     let (x0, y0) = (line.point1.x as i32, line.point1.y as i32);
-//     let (x1, y1) = (line.point2.x as i32, line.point2.y as i32);
-    
-//     // Y轴翻转：y = height - 1 - y
-//     let flipped_y0 = (height as i32 - 1) - y0;
-//     let flipped_y1 = (height as i32 - 1) - y1;
-    
-//     bresenham_line(frame, width, height, x0, flipped_y0, x1, flipped_y1);
-// }
-
 pub fn draw_line(frame: &mut [u8], width: usize, height: usize, line: &ScreenLine) {
     let (x0, y0) = (line.point1.x, line.point1.y);
     let (x1, y1) = (line.point2.x, line.point2.y);
     
-    // 使用整数Bresenham算法，避免浮点数精度问题
     bresenham_line(frame, width, height, x0, y0, x1, y1);
 }
 

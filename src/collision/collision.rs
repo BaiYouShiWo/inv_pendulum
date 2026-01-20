@@ -146,7 +146,6 @@ impl ScreenPoint {
     }
 }
 
-// 应用宏到各种运算
 impl_int_binary_op!(Add, add, +);
 impl_int_binary_op!(Sub, sub, -);
 
@@ -156,35 +155,6 @@ impl_int_binary_op!(Sub, sub, -);
 pub struct ScreenLine{
     pub point1:ScreenPoint,
     pub point2:ScreenPoint,
-}
-
-
-#[derive(Clone)]
-pub struct CollisionLine {
-    pub line: ScreenLine,
-    pub normal: Vec2d
-}
-
-pub struct Boundaries {
-    pub lines: Vec<CollisionLine>,
-    pub damping_factor: f32,
-}
-
-pub struct Ball {
-    pub position: ScreenPoint,
-    pub velocity: Vec2d, 
-    pub radius: f32
-}
-impl Ball {
-    pub fn update_position(&mut self, dt: f32) {
-        self.position.x += (self.velocity.x * dt * 250.0) as i32;
-        self.position.y += (self.velocity.y * dt * 250.0) as i32;
-    }
-}
-
-
-pub struct Balls {
-    pub balls: Vec<Ball>,
 }
 
 pub fn check_collision(line: &ScreenLine, norm: &Vec2d, center: &ScreenPoint, radius: f32) -> bool{
