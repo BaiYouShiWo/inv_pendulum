@@ -12,7 +12,7 @@ impl PendulumPhysicsEngine {
             state: StateVector {
                 cart_position: 0.0,
                 cart_velocity: 0.0,
-                pendulum_angle: 0.5,  // initial angle
+                pendulum_angle: 2.8,  // initial angle
                 pendulum_ang_vel: 0.0,
             },
             cart_mass: 0.5,

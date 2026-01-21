@@ -22,7 +22,14 @@ pub fn draw_pendulum(frame: &mut [u8], width: usize, height: usize, state: &Stat
     let pendulum_length = shape.pendulum_length * 300.0;
     let cart_width = pendulum_length / 3.0;
     let cart_height = cart_width / 2.0;
-    let cart_x = (width as f32) / 1.5  + state.cart_position * 300.0;
+    let mut cart_x = state.cart_position * 300.0;
+    while cart_x > 480.0{
+        cart_x = cart_x - 960.0;
+    }
+    while cart_x < -480.0 {
+        cart_x = cart_x + 960.0;
+    }
+    cart_x = cart_x + (width as f32) / 2.0;
     let cart_y = 360f32;
     draw_rectangle(frame, width, height,
         (cart_x - cart_width / 2.0) as i32,

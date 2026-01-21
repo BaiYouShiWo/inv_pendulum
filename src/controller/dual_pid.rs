@@ -30,7 +30,7 @@ impl DualLoopPID {
         let position_error = target_position - state.cart_position;
         let position_force = self.position_pid.update(position_error);
         
-        let mut total_force = angle_force + position_force * 0.4;
+        let mut total_force = angle_force;// + position_force * 0.4;
         
         total_force = total_force.clamp(-self.max_force, self.max_force);
         
